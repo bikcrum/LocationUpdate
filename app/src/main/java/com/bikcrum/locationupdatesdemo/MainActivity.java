@@ -1,17 +1,19 @@
 package com.bikcrum.locationupdatesdemo;
 
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.bikcrum.locationupdate.LocationUpdateActivity;
+import com.bikcrum.locationupdate.LocationUpdate;
 
+public class MainActivity extends AppCompatActivity implements LocationUpdate.OnLocationUpdatedListener {
 
-public class MainActivity extends LocationUpdateActivity {
-
+    private LocationUpdate locationUpdate;
     protected static final String TAG = "MainActivity";
 
     /**
@@ -44,12 +46,15 @@ public class MainActivity extends LocationUpdateActivity {
     protected String mLastUpdateTime;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        setLocationUpdateIntervalInMilliseconds(UPDATE_INTERVAL_IN_MILLISECONDS);
-        setLocationFastestUpdateIntervalInMilliseconds(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+        locationUpdate = LocationUpdate.getInstance(this);
+        locationUpdate.onCreate(savedInstanceState);
+
+        locationUpdate.setLocationUpdateIntervalInMilliseconds(UPDATE_INTERVAL_IN_MILLISECONDS);
+        locationUpdate.setLocationFastestUpdateIntervalInMilliseconds(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
 
         // Locate the UI widgets.
         mStartUpdatesButton = findViewById(R.id.start_updates_button);
@@ -66,20 +71,38 @@ public class MainActivity extends LocationUpdateActivity {
         mLastUpdateTime = "";
 
         mStartUpdatesButton.setOnClickListener(view -> {
-            startLocationUpdates();
+            locationUpdate.startLocationUpdates();
             mStartUpdatesButton.setEnabled(false);
             mStopUpdatesButton.setEnabled(true);
         });
 
         mStopUpdatesButton.setOnClickListener(view -> {
-            stopLocationUpdates();
+            locationUpdate.stopLocationUpdates();
             mStartUpdatesButton.setEnabled(true);
             mStopUpdatesButton.setEnabled(false);
         });
     }
 
     @Override
-    protected void onLocationUpdated(Location mCurrentLocation, String mLastUpdateTime) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        locationUpdate.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        locationUpdate.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    protected void onDestroy() {
+        locationUpdate.onDestroy();
+        super.onDestroy();
+    }
+
+    @Override
+    public void onLocationUpdated(Location mCurrentLocation, String mLastUpdateTime) {
         Log.v(TAG, "onLocationUpdated is called");
         updateLocationUI(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), mLastUpdateTime);
     }
